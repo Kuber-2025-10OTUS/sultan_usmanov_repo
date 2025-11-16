@@ -22,4 +22,4 @@
  - В браузере открыть ссылку http://ip адрес рабочей станции где развернут k0s, minikube :30156/
 
 ## PR checklist:
- - [kubernetes-intro] Выставлен label с темой домашнего задания
+ - [kubernetes-intro]
