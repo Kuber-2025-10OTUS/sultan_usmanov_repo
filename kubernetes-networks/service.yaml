@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kube-net-service
+  namespace: homework
+spec:
+  type: ClusterIP
+  selector:
+    app: kube-net-app
+  ports:
+  - port: 80
+    targetPort: 8000
