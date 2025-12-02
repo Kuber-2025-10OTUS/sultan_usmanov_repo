@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-volume-app
+  namespace: homework
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: kube-volume-app
+  template:
+    metadata:
+      labels:
+        app: kube-volume-app
+    spec:
+      initContainers:
+      - name: init-container
+        image: busybox:1.28
+        command:
+        - wget
+        - "-O"
+        - "/init/index.html"
+        - https://ya.ru
+        volumeMounts:
+        - name: workdir
+          mountPath: "/init"
+      containers:
+      - name: kube-volume-app
+        image: nginx:1.29.2
+        lifecycle:
+          preStop:
+            exec:
+              command: ["rm", /init/index.html"]
+        readinessProbe:
+          exec:
+            command:
+            - cat
+            - /init/index.html
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          failureThreshold: 5
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: workdir
+          mountPath: "/init"
+        - name: conf-configmap-key-pair
+          mountPath: /homework/conf
+        - name: nginx-def-conf-configmap
+          mountPath: /etc/nginx/conf.d/default.conf
+          subPath: default.conf
+      volumes:
+      - name: workdir
+        persistentVolumeClaim:
+          claimName: kube-volume-pvc
+      - name: conf-configmap-key-pair
+        configMap:
+          name: conf-configmap-key-pair
+      - name: nginx-def-conf-configmap
+        configMap:
+          name: nginx-def-conf-configmap
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: homework
+                operator: In
+                values:
+                - "true"
+        
