@@ -18,5 +18,5 @@ spec:
       serviceAccountName: mysql-operator
       containers:
       - name: mysql-app-deployment
-        image: roflmaoinmysoul/mysql-operator:1.0.0
+        image: luciflus/mysql-operator:1.0.32
         imagePullPolicy: Always

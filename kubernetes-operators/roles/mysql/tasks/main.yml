@@ -1,55 +1,4 @@
 ---
-# Set CR variables
-- name: Set CR variables
-  set_fact:
-    cr_name: "{{ meta.name }}"
-    cr_namespace: "{{ meta.namespace }}"
-    cr_uid: "{{ meta.uid }}"
-    cr_spec: "{{ spec }}"
-
-########################################
-# 1. Check if CR is being deleted
-########################################
-- name: Check if CR is being deleted
-  set_fact:
-    being_deleted: "{{ meta.deletionTimestamp is defined }}"
-
-- block:
-    - name: Delete Deployment
-      kubernetes.core.k8s:
-        state: absent
-        kind: Deployment
-        name: "{{ cr_name }}"
-        namespace: "{{ cr_namespace }}"
-
-    - name: Delete Service
-      kubernetes.core.k8s:
-        state: absent
-        kind: Service
-        name: "{{ cr_name }}"
-        namespace: "{{ cr_namespace }}"
-
-    - name: Delete PVC
-      kubernetes.core.k8s:
-        state: absent
-        kind: PersistentVolumeClaim
-        name: "{{ cr_name }}"
-        namespace: "{{ cr_namespace }}"
-
-    - name: Delete PV
-      kubernetes.core.k8s:
-        state: absent
-        kind: PersistentVolume
-        name: "{{ cr_name }}-pv"
-  when: being_deleted
-
-- name: Stop reconciliation when deleting
-  meta: end_play
-  when: being_deleted
-
-########################################
-# 2. Ensure PV exists
-########################################
 - name: Ensure PV exists
   kubernetes.core.k8s:
     state: present
@@ -67,9 +16,7 @@
           path: "/mnt/data/{{ cr_name }}"
         persistentVolumeReclaimPolicy: Delete
 
-########################################
-# 3. Ensure PVC exists
-########################################
+# 5. Ensure PVC exists
 - name: Ensure PVC exists
   kubernetes.core.k8s:
     state: present
@@ -92,9 +39,7 @@
             storage: "{{ cr_spec.storage_size }}"
         volumeName: "{{ cr_name }}-pv"
 
-########################################
-# 4. Ensure Deployment exists (idempotent)
-########################################
+# 6. Ensure Deployment exists
 - name: Ensure Deployment exists or updated
   kubernetes.core.k8s:
     state: present
@@ -135,9 +80,7 @@
                 persistentVolumeClaim:
                   claimName: "{{ cr_name }}"
 
-########################################
-# 5. Wait until Deployment is ready
-########################################
+# 7. Wait until Deployment is ready
 - name: Wait until Deployment is ready
   kubernetes.core.k8s_info:
     api_version: apps/v1
@@ -149,9 +92,7 @@
   retries: 30
   delay: 10
 
-########################################
-# 6. Ensure Service exists
-########################################
+# 8. Ensure Service exists
 - name: Ensure Service exists or updated
   kubernetes.core.k8s:
     state: present
@@ -175,9 +116,7 @@
             port: 3306
             targetPort: 3306
 
-########################################
-# 7. Update CR status
-########################################
+# 9. Update CR status
 - name: Update CR status to ready
   kubernetes.core.k8s:
     state: present

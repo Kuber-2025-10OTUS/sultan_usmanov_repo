@@ -1,0 +1,7 @@
+- version: v1
+  group: otus.homework
+  kind: MySQL
+  namespaced: true
+  playbook: roles/mysql/tasks/main.yml
+  watchNamespaces:
+    - default

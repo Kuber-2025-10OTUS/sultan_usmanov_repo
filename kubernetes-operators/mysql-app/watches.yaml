@@ -1,6 +1,0 @@
----
-- name: mysqls.otus.homework
-  group: otus.homework
-  version: v1
-  kind: MySQL
-  playbook: roles/mysql/tasks/main.yml

@@ -1,0 +1,7 @@
+---
+# Значения по умолчанию для CR MySQL
+mysql_defaults:
+  image: "mysql:8.0"          # образ MySQL по умолчанию
+  storage_size: "1Gi"         # размер PV/PVC по умолчанию
+  database: "mydatabase"      # имя базы по умолчанию
+  password: "rootpassword"    # пароль root по умолчанию
