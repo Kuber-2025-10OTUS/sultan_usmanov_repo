@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-conf-configmap
+  namespace: homework
+data:
+  default.conf: |
+    server {
+       listen *:8000 default_server;
+       server_name  localhost;
+
+       location / {
+            root "/homework";
+            index non_existent_file_name; #for listing all files in folder
+            autoindex on;
+        }
+    }

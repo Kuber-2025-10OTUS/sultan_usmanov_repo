@@ -1,0 +1,7 @@
+environments:
+  dev:
+    values:
+      - envs/dev/global.yaml
+  prod:
+    values:
+      - envs/prod/global.yaml
