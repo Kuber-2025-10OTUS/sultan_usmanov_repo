@@ -1,0 +1,192 @@
+---
+# Set CR variables
+- name: Set CR variables
+  set_fact:
+    cr_name: "{{ meta.name }}"
+    cr_namespace: "{{ meta.namespace }}"
+    cr_uid: "{{ meta.uid }}"
+    cr_spec: "{{ spec }}"
+
+########################################
+# 1. Check if CR is being deleted
+########################################
+- name: Check if CR is being deleted
+  set_fact:
+    being_deleted: "{{ meta.deletionTimestamp is defined }}"
+
+- block:
+    - name: Delete Deployment
+      kubernetes.core.k8s:
+        state: absent
+        kind: Deployment
+        name: "{{ cr_name }}"
+        namespace: "{{ cr_namespace }}"
+
+    - name: Delete Service
+      kubernetes.core.k8s:
+        state: absent
+        kind: Service
+        name: "{{ cr_name }}"
+        namespace: "{{ cr_namespace }}"
+
+    - name: Delete PVC
+      kubernetes.core.k8s:
+        state: absent
+        kind: PersistentVolumeClaim
+        name: "{{ cr_name }}"
+        namespace: "{{ cr_namespace }}"
+
+    - name: Delete PV
+      kubernetes.core.k8s:
+        state: absent
+        kind: PersistentVolume
+        name: "{{ cr_name }}-pv"
+  when: being_deleted
+
+- name: Stop reconciliation when deleting
+  meta: end_play
+  when: being_deleted
+
+########################################
+# 2. Ensure PV exists
+########################################
+- name: Ensure PV exists
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: PersistentVolume
+      metadata:
+        name: "{{ cr_name }}-pv"
+      spec:
+        capacity:
+          storage: "{{ cr_spec.storage_size }}"
+        accessModes:
+          - ReadWriteOnce
+        hostPath:
+          path: "/mnt/data/{{ cr_name }}"
+        persistentVolumeReclaimPolicy: Delete
+
+########################################
+# 3. Ensure PVC exists
+########################################
+- name: Ensure PVC exists
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: "{{ cr_name }}"
+        namespace: "{{ cr_namespace }}"
+        ownerReferences:
+          - apiVersion: otus.homework/v1
+            kind: MySQL
+            name: "{{ cr_name }}"
+            uid: "{{ cr_uid }}"
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: "{{ cr_spec.storage_size }}"
+        volumeName: "{{ cr_name }}-pv"
+
+########################################
+# 4. Ensure Deployment exists (idempotent)
+########################################
+- name: Ensure Deployment exists or updated
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: "{{ cr_name }}"
+        namespace: "{{ cr_namespace }}"
+        ownerReferences:
+          - apiVersion: otus.homework/v1
+            kind: MySQL
+            name: "{{ cr_name }}"
+            uid: "{{ cr_uid }}"
+      spec:
+        replicas: 1
+        selector:
+          matchLabels:
+            app: "{{ cr_name }}"
+        template:
+          metadata:
+            labels:
+              app: "{{ cr_name }}"
+          spec:
+            containers:
+              - name: mysql
+                image: "{{ cr_spec.image }}"
+                env:
+                  - name: MYSQL_ROOT_PASSWORD
+                    value: "{{ cr_spec.password }}"
+                  - name: MYSQL_DATABASE
+                    value: "{{ cr_spec.database }}"
+                volumeMounts:
+                  - name: mysql-storage
+                    mountPath: /var/lib/mysql
+            volumes:
+              - name: mysql-storage
+                persistentVolumeClaim:
+                  claimName: "{{ cr_name }}"
+
+########################################
+# 5. Wait until Deployment is ready
+########################################
+- name: Wait until Deployment is ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    namespace: "{{ cr_namespace }}"
+    name: "{{ cr_name }}"
+  register: deployment_info
+  until: deployment_info.resources[0].status.readyReplicas == deployment_info.resources[0].status.replicas
+  retries: 30
+  delay: 10
+
+########################################
+# 6. Ensure Service exists
+########################################
+- name: Ensure Service exists or updated
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: "{{ cr_name }}"
+        namespace: "{{ cr_namespace }}"
+        ownerReferences:
+          - apiVersion: otus.homework/v1
+            kind: MySQL
+            name: "{{ cr_name }}"
+            uid: "{{ cr_uid }}"
+      spec:
+        type: ClusterIP
+        selector:
+          app: "{{ cr_name }}"
+        ports:
+          - name: mysql
+            port: 3306
+            targetPort: 3306
+
+########################################
+# 7. Update CR status
+########################################
+- name: Update CR status to ready
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: otus.homework/v1
+      kind: MySQL
+      metadata:
+        name: "{{ cr_name }}"
+        namespace: "{{ cr_namespace }}"
+      status:
+        ready: true
+    merge_type: strategic-merge
