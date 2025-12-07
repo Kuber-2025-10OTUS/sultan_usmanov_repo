@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kubernetes-templating.fullname" . }}
+  namespace: homework
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  {{- if .Values.rollingupdate.enabled }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: {{ .Values.rollingupdate.maxUnavailable }}
+      maxSurge: {{ .Values.rollingupdate.maxSurge }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: {{ include "kubernetes-templating.fullname" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "kubernetes-templating.fullname" . }}
+    spec:
+      initContainers:
+      - name: {{ .Values.ContainersSpec.initContainers.name }}
+        image: {{ .Values.ContainersSpec.initContainers.image }}:{{ .Values.ContainersSpec.initContainers.tag }}
+        command:
+        - wget
+        - "-O"
+        - "/init/index.html"
+        - https://ya.ru
+        {{- with .Values.initContainersVolumeMounts }}
+        volumeMounts:
+            {{- toYaml . | nindent 8 }}
+        {{- end }}
+      containers:
+      - name: {{ include "kubernetes-templating.fullname" . }}
+        image: {{ .Values.ContainersSpec.containers.image }}:{{ .Values.ContainersSpec.containers.tag }}
+        ports:
+        - containerPort: {{ .Values.ContainersSpec.containers.containerPort }}
+        lifecycle:
+          preStop:
+            exec:
+              command: ["rm", "/homework/index.html"]
+        {{- if .Values.ParameterreadinessProbe.enabled }}
+        {{- with .Values.readinessProbe }}
+        readinessProbe:
+            {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- end }}
+        {{- with .Values.containersVolumeMounts }}
+        volumeMounts:
+            {{- toYaml . | nindent 8 }}
+        {{- end }}
+      volumes:
+      - name: workdir
+        emptyDir: {}
+      - name: nginx-config-volume
+        configMap:
+          name: {{ include "kubernetes-templating.fullname" . }}-configmap
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

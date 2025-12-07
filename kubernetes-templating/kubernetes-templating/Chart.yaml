@@ -1,0 +1,11 @@
+apiVersion: v2
+name: kube-net-app
+description: Kubernetes network application
+type: application
+version: 0.1.0               #Chart version
+appVersion: "nginx:1.29.2"   #Nginx version in our Helm chart
+kubeVersion: ">= 1.31.1"
+dependencies:
+- name: jenkins
+  version: 2.5.4
+  repository: https://charts.helm.sh/stable
