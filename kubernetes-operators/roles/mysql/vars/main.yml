@@ -1,0 +1,10 @@
+---
+# vars file for MySQL
+cr_name: "mysql-app"
+cr_namespace: "default"
+cr_uid: "{{ meta.uid }}"
+cr_spec: "{{ spec }}"
+image: mysql:5.7
+database: mydb
+password: passw0rd
+storage_size: 10Gi

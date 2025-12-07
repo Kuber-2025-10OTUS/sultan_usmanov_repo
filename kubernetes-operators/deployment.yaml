@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-app-deployment
+  namespace: default
+  labels:
+    app: mysql-app-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql-app-deployment
+  template:
+    metadata:
+      labels:
+        app: mysql-app-deployment
+    spec:
+      serviceAccountName: mysql-operator
+      containers:
+      - name: mysql-app-deployment
+        image: luciflus/mysql-operator:1.0.32
+        imagePullPolicy: Always
