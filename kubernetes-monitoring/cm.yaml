@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-conf-configmap
+data:
+  metrics.conf: |
+    server {
+       listen 8080;
+       location /metrics_stub {
+            stub_status;
+        }
+    }
