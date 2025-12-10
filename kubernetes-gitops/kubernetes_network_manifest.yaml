@@ -1,0 +1,16 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kubernetes-networks
+spec:
+  project: otus
+  source:
+    repoURL: https://github.com/Kuber-2025-10OTUS/sultan_usmanov_repo.git
+    path: kubernetes-networks
+    targetRevision: HEAD
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: homework
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
