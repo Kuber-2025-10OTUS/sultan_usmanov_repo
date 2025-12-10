@@ -1,0 +1,15 @@
+Прописать label и taint на воркер ноде, на которой планируется размещать только сервисы loki
+kubectl label nodes k8sworker-01 node-role=infra
+kubectl taint nodes k8sworker-01 node-role=infra:NoSchedule
+
+Вывод команд что требовалось сделать в ДЗ, список серверов и taint:
+kubectl get nodes -o custom-columns=NAME:.metadata.name,TAINTS:.spec.taints
+NAME               TAINTS
+k8smaster-01   [map[effect:NoSchedule key:node-role.kubernetes.io/control-plane]]
+k8smaster-02   [map[effect:NoSchedule key:node-role.kubernetes.io/control-plane]]
+k8smaster-03   [map[effect:NoSchedule key:node-role.kubernetes.io/control-plane]]
+k8sworker-01   [map[effect:NoSchedule key:node-role value:infra]]
+k8sworker-02   <none>
+k8sworker-03   <none>
+
+В качестве подтверждения, что установлен и настроен minio также приложил скрин.
