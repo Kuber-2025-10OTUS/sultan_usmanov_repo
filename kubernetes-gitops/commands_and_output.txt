@@ -1,0 +1,35 @@
+Прописать label и taint на воркер ноде, на которой планируется размещать только сервисы argocd
+kubectl label nodes k8sworker01 node-role=infra
+kubectl taint nodes k8sworker01 node-role=infra:NoSchedule
+
+Вывод команд что требовалось сделать в ДЗ, список серверов и taint:
+kubectl get nodes -o custom-columns=NAME:.metadata.name,TAINTS:.spec.taints
+NAME          TAINTS
+k8smaster01   [map[effect:NoSchedule key:node-role.kubernetes.io/control-plane]]
+k8smaster02   [map[effect:NoSchedule key:node-role.kubernetes.io/control-plane]]
+k8smaster03   [map[effect:NoSchedule key:node-role.kubernetes.io/control-plane]]
+k8sworker01   [map[effect:NoSchedule key:node-role value:infra]]
+k8sworker02   <none>
+k8sworker03   <none>
+k8sworker04   <none>
+k8sworker05   <none>
+
+Установка argocd
+kubectl apply -f argocd_install.yaml -n argocd
+
+Получить сикрет argocd
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d
+
+Прописать label на k8sworker03 для размещения подов kubernetes_network
+kubectl label nodes k8sworker03 homework=true
+
+kubectl get nodes --show-labels
+NAME          STATUS   ROLES           AGE     VERSION   LABELS
+k8smaster01   Ready    control-plane   6d15h   v1.31.1   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=k8smaster01,kubernetes.io/os=linux,node-role.kubernetes.io/control-plane=,node.kubernetes.io/exclude-from-external-load-balancers=
+k8smaster02   Ready    control-plane   6d15h   v1.31.1   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=k8smaster02,kubernetes.io/os=linux,node-role.kubernetes.io/control-plane=,node.kubernetes.io/exclude-from-external-load-balancers=
+k8smaster03   Ready    control-plane   6d15h   v1.31.1   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=k8smaster03,kubernetes.io/os=linux,node-role.kubernetes.io/control-plane=,node.kubernetes.io/exclude-from-external-load-balancers=
+k8sworker01   Ready    <none>          6d15h   v1.31.1   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=k8sworker01,kubernetes.io/os=linux,node-role=infra
+k8sworker02   Ready    <none>          6d15h   v1.31.1   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=k8sworker02,kubernetes.io/os=linux
+k8sworker03   Ready    <none>          6d15h   v1.31.1   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,homework=true,kubernetes.io/arch=amd64,kubernetes.io/hostname=k8sworker03,kubernetes.io/os=linux
+k8sworker04   Ready    <none>          6d15h   v1.31.1   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=k8sworker04,kubernetes.io/os=linux
+k8sworker05   Ready    <none>          6d15h   v1.31.1   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=k8sworker05,kubernetes.io/os=linux
