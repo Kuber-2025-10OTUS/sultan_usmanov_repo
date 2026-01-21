@@ -44,8 +44,6 @@
 
  - Создать сервисную учетную запись vault-auth выполнив команду - kubectl apply -f sa.yaml
 
- - Установить external-secrets выполнив команду - helm install external-secrets external-secrets/ -n vault -f external_secrets_values.yaml --set installCRDs=true
-
  - В vault-0 выполнить команды согласно описания ниже:
    * vault login                                       # Залогиниться
    * vault auth enable kubernetes                      # Включить авторизацию kubernetes
@@ -56,6 +54,12 @@
         policies=otus-policy \
         ttl=24h \
         audience="https://kubernetes.default.svc.cluster.local"
+
+ - Создать объект SecretStore выполнив команду - kubectl apply -f secretstore.yaml
+
+ - Установить external-secrets выполнив команду - helm install external-secrets external-secrets/ -n vault -f external_secrets_values.yaml --set installCRDs=true
+
+ - Создать объект ExternalSecret выполнив команду - kubectl apply -f externalsecret-otus.yaml
 
 ## Как проверить работоспособность:
  - Проверить статус запущенных подов: vault, external-secrets - kubectl get all -n vault
