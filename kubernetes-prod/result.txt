@@ -1,0 +1,54 @@
+## Kubeadm результат вывода команды kubectl get node -o wide
+
+## Результат выполнения команды - kubeadm init --config kubeadmin.yaml
+-------------------------------------------------------------------------------------------------------
+Your Kubernetes control-plane has initialized successfully!
+
+To start using your cluster, you need to run the following as a regular user:
+
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+Alternatively, if you are the root user, you can run:
+
+  export KUBECONFIG=/etc/kubernetes/admin.conf
+
+You should now deploy a pod network to the cluster.
+Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
+  https://kubernetes.io/docs/concepts/cluster-administration/addons/
+
+Then you can join any number of worker nodes by running the following on each as root:
+
+kubeadm join 192.168.1.130:6443 --token 0p2r16.qb2sbns6fx02vnyo \
+	--discovery-token-ca-cert-hash sha256:e224d10195682912a7334db52f1b4126397ddb65da6acb87b7c39fdb0bba5dd5 
+-------------------------------------------------------------------------------------------------------
+## До обновления кластера:
+-------------------------------------------------------------------------------------------------------
+[root@k8sm1 ~]# kubectl get node -o wide
+NAME                  STATUS   ROLES           AGE   VERSION    INTERNAL-IP     EXTERNAL-IP   OS-IMAGE          KERNEL-VERSION          CONTAINER-RUNTIME
+k8sm1.homelab.local   Ready    control-plane   43m   v1.31.14   192.168.1.130   <none>        CentOS Stream 9   5.14.0-592.el9.x86_64   containerd://2.2.0
+k8sw1                 Ready    <none>          14m   v1.31.14   192.168.1.131   <none>        CentOS Stream 9   5.14.0-592.el9.x86_64   containerd://2.2.0
+k8sw2                 Ready    <none>          2s    v1.31.14   192.168.1.132   <none>        CentOS Stream 9   5.14.0-592.el9.x86_64   containerd://2.2.0
+k8sw3                 Ready    <none>          10m   v1.31.14   192.168.1.133   <none>        CentOS Stream 9   5.14.0-592.el9.x86_64   containerd://2.2.0
+-------------------------------------------------------------------------------------------------------
+## После обновления кластера:
+[root@k8sm1 ~]# kubectl get nodes -o wide
+NAME                  STATUS   ROLES           AGE   VERSION    INTERNAL-IP     EXTERNAL-IP   OS-IMAGE          KERNEL-VERSION          CONTAINER-RUNTIME
+k8sm1.homelab.local   Ready    control-plane   11h   v1.32.12   192.168.1.130   <none>        CentOS Stream 9   5.14.0-592.el9.x86_64   containerd://2.2.0
+k8sw1                 Ready    <none>          10h   v1.32.12   192.168.1.131   <none>        CentOS Stream 9   5.14.0-592.el9.x86_64   containerd://2.2.0
+k8sw2                 Ready    <none>          10h   v1.32.12   192.168.1.132   <none>        CentOS Stream 9   5.14.0-592.el9.x86_64   containerd://2.2.0
+k8sw3                 Ready    <none>          10h   v1.32.12   192.168.1.133   <none>        CentOS Stream 9   5.14.0-592.el9.x86_64   containerd://2.2.0
+-------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------
+## Kubespray результат вывода команды kubectl get node -o wide:
+kubectl get nodes -o wide
+NAME          STATUS   ROLES           AGE   VERSION   INTERNAL-IP     EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION     CONTAINER-RUNTIME
+k8smaster01   Ready    control-plane   48d   v1.31.1   192.168.1.120   <none>        Ubuntu 24.04.3 LTS   6.8.0-90-generic   containerd://1.7.23
+k8smaster02   Ready    control-plane   48d   v1.31.1   192.168.1.121   <none>        Ubuntu 24.04.2 LTS   6.8.0-88-generic   containerd://1.7.23
+k8smaster03   Ready    control-plane   48d   v1.31.1   192.168.1.122   <none>        Ubuntu 24.04.2 LTS   6.8.0-88-generic   containerd://1.7.23
+k8sworker01   Ready    <none>          48d   v1.31.1   192.168.1.123   <none>        Ubuntu 24.04.2 LTS   6.8.0-90-generic   containerd://1.7.23
+k8sworker02   Ready    <none>          48d   v1.31.1   192.168.1.124   <none>        Ubuntu 24.04.2 LTS   6.8.0-90-generic   containerd://1.7.23
+k8sworker03   Ready    <none>          48d   v1.31.1   192.168.1.125   <none>        Ubuntu 24.04.2 LTS   6.8.0-90-generic   containerd://1.7.23
+k8sworker04   Ready    <none>          48d   v1.31.1   192.168.1.126   <none>        Ubuntu 24.04.3 LTS   6.8.0-90-generic   containerd://1.7.23
+k8sworker05   Ready    <none>          48d   v1.31.1   192.168.1.127   <none>        Ubuntu 24.04.3 LTS   6.8.0-90-generic   containerd://1.7.23
