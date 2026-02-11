@@ -1,0 +1,30 @@
+# Выполнено ДЗ № 13
+
+ - Основное ДЗ - Проведение диагностики состояния кластера, знакомство с инструментами для диагностики
+
+## В процессе сделано:
+ - Подготовил yaml манифест pod.yaml для создания POD с именем kube-intro-app
+ - Подготовил yaml манифест namespace.yaml для создания namespace homework
+
+## Как запустить проект:
+ - Клонировать репозиторий на свою рабочую станцию, зайти в каталог kubernetes-debug
+ - Выполнить команду для создания Namespace - kubectl apply -f namespace.yaml
+ - Выполнить команду для создания POD - kubectl apply -f pod.yaml
+
+## Как проверить работоспособность:
+ - Проверить состояние POD выполнив команду - kubectl get pod -n homework, должны получить ответ как в примере ниже:
+     * NAME             READY   STATUS    RESTARTS   AGE
+     * kube-intro-app   1/1     Running   0          22m
+ - Cоздать эфемерный контейнер выполнив команду - kubectl debug kube-intro-app -it --image=nicolaka/netshoot --target=kube-intro-app --share-processes -n homework
+     * Результат выполнения команды: ls -la /proc/1/root/etc/nginx приведен в файле result.txt
+     * Результат выполнения команды: tcpdump -nn -i any -e port 80 приведен в файле result.txt
+ - Открыть отдельное окно консоли и выполнить команд kubectl port-forward pod/kube-intro-app 8081:80 -n homework, тем самым мы пробрасываем порт 8081 внутри пода на 80 порт
+ - Открыть ещё одно дополнительное окно консоли и выполнить команду curl http://localhost:8081, в окне консоли где мы запускали debug контейнер и внутри него выполнили команду tcpdump -nn -i any -e port 80, 
+   мы должны увидеть обращения к nginx, результат выполнения сохранен в result.txt
+ - Создать отладочный под для ноды - kubectl debug node/minikube -it --image=nicolaka/netshoot
+     * Результат выполнения команды: ls /host/var/log/containers | grep kube-intro-app приведен в файле result.txt
+ - Задание со * удалось выполнить, введя команду: kubectl debug kube-intro-app -it --image=nicolaka/netshoot --target=kube-intro-app --profile=sysadmin -n homework
+     * Результат выполнения команды: strace -p 1 приведен в файле result.txt
+
+## PR checklist:
+ - kubernetes-debug

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kube-intro-app
+  labels:
+    app.kubernetes.io/name: kube-intro-app
+  namespace: homework
+spec: 
+  containers:
+  - name: kube-intro-app
+    image: kyos0109/nginx-distroless:latest
+    ports:
+    - containerPort: 80
