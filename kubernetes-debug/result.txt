@@ -1,0 +1,55 @@
+kubectl debug kube-intro-app -it --image=nicolaka/netshoot  --target=kube-intro-app --share-processes -n homework
+
+Вывод: ls -la /proc/1/root/etc/nginx
+total 48
+drwxr-xr-x    3 root     root          4096 Oct  5  2020 .
+drwxr-xr-x    1 root     root          4096 Feb 11 18:25 ..
+drwxr-xr-x    2 root     root          4096 Oct  5  2020 conf.d
+-rw-r--r--    1 root     root          1007 Apr 21  2020 fastcgi_params
+-rw-r--r--    1 root     root          2837 Apr 21  2020 koi-utf
+-rw-r--r--    1 root     root          2223 Apr 21  2020 koi-win
+-rw-r--r--    1 root     root          5231 Apr 21  2020 mime.types
+lrwxrwxrwx    1 root     root            22 Apr 21  2020 modules -> /usr/lib/nginx/modules
+-rw-r--r--    1 root     root           643 Apr 21  2020 nginx.conf
+-rw-r--r--    1 root     root           636 Apr 21  2020 scgi_params
+-rw-r--r--    1 root     root           664 Apr 21  2020 uwsgi_params
+-rw-r--r--    1 root     root          3610 Apr 21  2020 win-utf
+
+Вывод tcpdump:
+ kube-intro-app  /  tcpdump -nn -i any -e port 80
+tcpdump: WARNING: any: That device doesn't support promiscuous mode
+(Promiscuous mode not supported on the "any" device)
+tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
+listening on any, link-type LINUX_SLL2 (Linux cooked v2), snapshot length 262144 bytes
+18:34:15.751777 lo    In  ifindex 1 00:00:00:00:00:00 ethertype IPv4 (0x0800), length 80: 127.0.0.1.55000 > 127.0.0.1.80: Flags [S], seq 2118536186, win 65495, options [mss 65495,sackOK,TS val 2483320807 ecr 0,nop,wscale 7], length 0
+18:34:15.751784 lo    In  ifindex 1 00:00:00:00:00:00 ethertype IPv4 (0x0800), length 80: 127.0.0.1.80 > 127.0.0.1.55000: Flags [S.], seq 3484610980, ack 2118536187, win 65483, options [mss 65495,sackOK,TS val 2483320807 ecr 2483320807,nop,wscale 7], length 0
+18:34:15.751790 lo    In  ifindex 1 00:00:00:00:00:00 ethertype IPv4 (0x0800), length 72: 127.0.0.1.55000 > 127.0.0.1.80: Flags [.], ack 1, win 512, options [nop,nop,TS val 2483320807 ecr 2483320807], length 0
+18:34:15.751821 lo    In  ifindex 1 00:00:00:00:00:00 ethertype IPv4 (0x0800), length 149: 127.0.0.1.55000 > 127.0.0.1.80: Flags [P.], seq 1:78, ack 1, win 512, options [nop,nop,TS val 2483320807 ecr 2483320807], length 77: HTTP: GET / HTTP/1.1
+18:34:15.751823 lo    In  ifindex 1 00:00:00:00:00:00 ethertype IPv4 (0x0800), length 72: 127.0.0.1.80 > 127.0.0.1.55000: Flags [.], ack 78, win 511, options [nop,nop,TS val 2483320807 ecr 2483320807], length 0
+18:34:15.752055 lo    In  ifindex 1 00:00:00:00:00:00 ethertype IPv4 (0x0800), length 310: 127.0.0.1.80 > 127.0.0.1.55000: Flags [P.], seq 1:239, ack 78, win 512, options [nop,nop,TS val 2483320808 ecr 2483320807], length 238: HTTP: HTTP/1.1 200 OK
+18:34:15.752082 lo    In  ifindex 1 00:00:00:00:00:00 ethertype IPv4 (0x0800), length 72: 127.0.0.1.55000 > 127.0.0.1.80: Flags [.], ack 239, win 511, options [nop,nop,TS val 2483320808 ecr 2483320808], length 0
+18:34:15.752241 lo    In  ifindex 1 00:00:00:00:00:00 ethertype IPv4 (0x0800), length 684: 127.0.0.1.80 > 127.0.0.1.55000: Flags [P.], seq 239:851, ack 78, win 512, options [nop,nop,TS val 2483320808 ecr 2483320808], length 612: HTTP
+18:34:15.752246 lo    In  ifindex 1 00:00:00:00:00:00 ethertype IPv4 (0x0800), length 72: 127.0.0.1.55000 > 127.0.0.1.80: Flags [.], ack 851, win 507, options [nop,nop,TS val 2483320808 ecr 2483320808], length 0
+18:34:15.754294 lo    In  ifindex 1 00:00:00:00:00:00 ethertype IPv4 (0x0800), length 72: 127.0.0.1.55000 > 127.0.0.1.80: Flags [F.], seq 78, ack 851, win 507, options [nop,nop,TS val 2483320810 ecr 2483320808], length 0
+18:34:15.754358 lo    In  ifindex 1 00:00:00:00:00:00 ethertype IPv4 (0x0800), length 72: 127.0.0.1.80 > 127.0.0.1.55000: Flags [F.], seq 851, ack 79, win 512, options [nop,nop,TS val 2483320810 ecr 2483320810], length 0
+18:34:15.754369 lo    In  ifindex 1 00:00:00:00:00:00 ethertype IPv4 (0x0800), length 72: 127.0.0.1.55000 > 127.0.0.1.80: Flags [.], ack 852, win 507, options [nop,nop,TS val 2483320810 ecr 2483320810], length 0
+18:34:17.196084 lo    In  ifindex 1 00:00:00:00:00:00 ethertype IPv4 (0x0800), length 80: 127.0.0.1.55010 > 127.0.0.1.80: Flags [S], seq 3267499439, win 65495, options [mss 65495,sackOK,TS val 2483322252 ecr 0,nop,wscale 7], length 0
+18:34:17.196090 lo    In  ifindex 1 00:00:00:00:00:00 ethertype IPv4 (0x0800), length 80: 127.0.0.1.80 > 127.0.0.1.55010: Flags [S.], seq 2199863581, ack 3267499440, win 65483, options [mss 65495,sackOK,TS val 2483322252 ecr 2483322252,nop,wscale 7], length 0
+
+Вывод kubectl get nodes:
+NAME       STATUS   ROLES           AGE   VERSION
+minikube   Ready    control-plane   40m   v1.34.0
+
+kubectl debug node/minikube -it --image=nicolaka/netshoot
+
+Вывод  ls /host/var/log/containers | grep kube-intro-app  
+kube-intro-app_homework_debugger-2jn6b-3e3ecf302d9f6db80e3b185488db96f8de6470ae17d60c3ceb2d44411f20d83f.log
+kube-intro-app_homework_debugger-xq6km-f10a6edf7d82b6fc54c7c6044cdf283c3b91663f00e93126ccdda9331a92adc2.log
+kube-intro-app_homework_kube-intro-app-9cce05886d466d2aa4bcb22b923f369e8b4976241cf4cf1650b90df0407b549b.log
+
+
+kubectl debug kube-intro-app -it --image=nicolaka/netshoot --target=kube-intro-app --profile=sysadmin -n homework
+
+strace -fp 1
+strace: Process 1 attached
+rt_sigsuspend([], 8
