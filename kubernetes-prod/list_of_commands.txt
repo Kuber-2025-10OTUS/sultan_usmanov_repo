@@ -1,0 +1,111 @@
+1) Установил и подготовил сервера согласно ДЗ, в случае с Kubeadm я использовал операционную систему RockyLinux. На кластере, что устанавливал при помощи Kubespray я использовал Ubuntu 24.04.3.
+2) На всех серверах выполнил следующие действия:
+    * swapoff -a  - я установил сервера без swap
+
+    * Отключить firewall
+      * systemctl stop firewalld
+      * systemctl disable firewalld
+
+    * Отключить selinux
+      * setenforce 0
+      * sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+    
+    * Настроить параметры ядра
+      * Создал файл /etc/modules-load.d/modules-kubernetes.conf и содержимое в нем:
+        * br_netfilter
+        * overlay
+      * Загрузил модули br_netfilter и overlay: 
+        * modprobe br_netfilter
+        * modprobe overlay
+
+    * В файл /etc/sysctl.conf добавить следующие строки:
+      * net.ipv4.ip_forward=1
+      * net.bridge.bridge-nf-call-iptables=1
+      * net.ipv4.ip_nonlocal_bind=1
+    * После выполнить команду sudo sysctl --system чтобы изменения применились без перезагрузки
+    
+    * Установил пакеты - dnf install -y bash-completion python3 tar containerd nfs-utils chrony kubectl kubelet kubeadm conntrack
+
+    * Включил и поднял сервисы
+      * systemctl enable --now containerd
+      * systemctl enable kubelet.service
+      * systemctl start containerd
+      * systemctl start kubelet.service
+
+3) На Master ноде выполнил следующие действия:
+    * Создал файл kubeadmin.yaml - файл конфигурации для настройки кластера 
+
+    * Скачал файл для настройки Flannel - https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
+
+    * Выполнил команду kubeadm init --config kubeadmin.yaml (вывод результата init сохранил в result.txt)
+
+    * После успешной установки содал $HOME/.kube/config согласно рекомендации:
+        * mkdir -p $HOME/.kube
+        * sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+        * sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+    * После выполненной настройки на Master ноде, проверил состояние кластера командой - kubectl get nodes, убедился, что у меня появилась control-plane нода
+        * [root@k8sm1 ~]# kubectl get nodes
+        * NAME                  STATUS     ROLES           AGE   VERSION
+        * k8sm1.homelab.local   Ready    control-plane     22h   v1.31.14
+    
+    * Для установки Flannel выполнил команду
+        * kubectl apply -f kube-flannel.yml
+
+    * С плагином возникли проблемы, почему-то он не создал файл для работы плагина - flannel /run/flannel/subnet.env, нашел решение:
+        cat <<EOF | sudo tee /run/flannel/subnet.env
+        FLANNEL_NETWORK=10.244.0.0/16
+        FLANNEL_SUBNET=10.244.0.1/24
+        FLANNEL_MTU=1450
+        FLANNEL_IPMASQ=true
+        EOF
+
+    * После проверил и убедился, что pod flannel запустился и заработал корректно
+
+4) На всех worker нодах выполнил команду для присоединения к кластер ноде - kubeadm join 192.168.1.130:6443 --token 0p2r16.qb2sbns6fx02vnyo \
+	--discovery-token-ca-cert-hash sha256:e224d10195682912a7334db52f1b4126397ddb65da6acb87b7c39fdb0bba5dd5
+
+5) После успешного выполнения на Master ноде проверяем статус командой - kubectl get nodes, в списке серверов должны увидеть добавленный сервер.
+
+## Обновление мастер и worker нод
+На Master ноде:
+    * kubeadm upgrade plan --ignore-preflight-errors=CreateJob
+    * kubeadm upgrade apply v1.32.12 
+    * sudo dnf install -y kubelet-1.32.12 kubectl-1.32.12 --disableexcludes=kubernetes
+    * sudo systemctl daemon-reload
+    * sudo systemctl restart kubelet
+
+## Для обновления каждой worker ноды:
+
+# Выводим в maintenance режим на Master ноде, обновляем первую worker ноду - k8sw1
+    * kubectl drain k8sw1 --ignore-daemonsets 
+
+# Переходим на worker ноду - k8sw1 и выполняем следующие действия:
+    * sudo dnf install -y kubelet-1.32.12 kubectl-1.32.12 --disableexcludes=kubernetes
+    * sudo systemctl daemon-reload
+    * sudo systemctl restart kubelet
+
+# Выводим из maintenance режима на Master ноде, вводим в работу первую ноду - k8sw1
+    * kubectl uncordon k8sw1
+
+# Выводим в maintenance режим на Master ноде, обновляем вторую worker ноду - k8sw2
+    * kubectl drain k8sw2 --ignore-daemonsets
+
+# Переходим на worker ноду - k8sw2 и выполняем следующие действия:
+    * sudo dnf install -y kubelet-1.32.12 kubectl-1.32.12 --disableexcludes=kubernetes
+    * sudo systemctl daemon-reload
+    * sudo systemctl restart kubelet
+
+# Выводим из maintenance режима на Master ноде, вводим в работу вторую ноду - k8sw2
+    * kubectl uncordon k8sw2
+
+# Выводим в maintenance режим на Master ноде, обновляем третью worker ноду - k8sw3
+    * kubectl drain k8sw3 --ignore-daemonsets
+
+# Переходим на worker ноду - k8sw3 и выполняем следующие действия:
+    * sudo dnf install -y kubelet-1.32.12 kubectl-1.32.12 --disableexcludes=kubernetes
+    * sudo systemctl daemon-reload
+    * sudo systemctl restart kubelet
+
+# Выводим из maintenance режима на Master ноде, вводим в работу третью ноду - k8sw3
+    * kubectl uncordon k8sw3
